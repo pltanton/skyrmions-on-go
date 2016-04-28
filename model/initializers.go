@@ -24,6 +24,8 @@ func NewBasicModel(cfg_path string) Model {
 		I     float64
 		D_LEN float64
 		MU    float64
+		LAM   float64
+		GAMMA float64
 		B     []float64
 		K     []float64
 	}
@@ -46,6 +48,8 @@ func NewBasicModel(cfg_path string) Model {
 	model.k = cfg.K
 	model.x = cfg.SIZE.X
 	model.y = cfg.SIZE.Y
+	model.lam = cfg.LAM
+	model.gamma = cfg.GAMMA
 
 	// Spins would be enumerated as
 	//		id = pos_y * x + pos_x
@@ -58,7 +62,7 @@ func NewBasicModel(cfg_path string) Model {
 	// Initialize spins
 	spins := make(la.Column, cfg.SIZE.X*cfg.SIZE.Y)
 	for i := 0; i < len(spins); i++ {
-		spins[i] = la.NewRandomVector(3)
+		spins[i] = la.NewRandomVector(3).Unit()
 	}
 	model.spins = spins
 

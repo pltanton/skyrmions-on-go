@@ -16,15 +16,25 @@ type Model struct {
 	spins  la.Column
 	bounds [][]Bound
 	mu     float64
+	lam    float64
+	gamma  float64
 	x      int
 	y      int
 	b      la.Vector
 	k      la.Vector
 }
 
+func (m Model) GetSpins() la.Column {
+	return m.spins
+}
+
+func (m Model) SetSpins(new_spins la.Column) {
+	m.spins = new_spins
+}
+
 func (m Model) String() string {
 	return fmt.Sprintf(
-		"Model properties is:\nSize of model: x=%v y=%v\nMU=%v\nB=%v\nK=%v",
-		m.x, m.y, m.mu, m.b, m.k,
+		"Model properties is:\nSize of model: x=%v y=%v\nMU=%v\nB=%v\nK=%v\nlam=%v\ngamma=%v",
+		m.x, m.y, m.mu, m.b, m.k, m.lam, m.gamma,
 	)
 }

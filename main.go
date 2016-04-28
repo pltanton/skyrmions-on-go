@@ -5,5 +5,8 @@ import (
 )
 
 func main() {
-	model.NewBasicModel("/home/anton/workdir/gocode/src/github.com/plotnikovanton/skyrmions_on_go/simple_model.yml")
+	m := model.NewBasicModel("/home/anton/workdir/gocode/src/github.com/plotnikovanton/skyrmions_on_go/simple_model.yml")
+	runner := model.NewSimpleIterator(&m)
+	runner.Energy = true
+	runner.Run()
 }
