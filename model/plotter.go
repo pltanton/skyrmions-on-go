@@ -6,25 +6,38 @@ import (
 	"os/exec"
 )
 
-type Plot chan string
-
-func (m Model) ConfigureGnuplot(plot *Plot) {
-	*plot <- fmt.Sprintf("set xrange [0:%d]\nset yrange [0:%d]\nset zrange [-1:2]", m.x*2, m.y*2)
+type Gnuplot struct {
+	m    *Model
+	pipe *chan string
 }
 
-func (m Model) PlotModel(plot *Plot) {
-	*plot <- "splot \"-\" with vectors"
+// Returns Gnuplot object
+func NewGnuplot(m *Model) Gnuplot {
+	pipe, err := getGnuplotPipe()
+	if err != nil {
+		panic(fmt.Sprintf("Can't create gnuplot pipe: %v", err))
+	}
+	// Configure gnuplot
+	pipe <- fmt.Sprintf("set xrange [0:%d]\nset yrange [0:%d]\nset zrange [-1:2]", m.x*2, m.y*2)
+	return Gnuplot{m, &pipe}
+}
+
+// Redraws model in current state
+func (gp Gnuplot) PlotModel() {
+	pipe := *gp.pipe
+	m := *gp.m
+	pipe <- "splot \"-\" with vectors"
 	for y := 0; y < m.y; y++ {
 		for x := 0; x < m.x; x++ {
 			cur := m.spins[y*m.x+x]
-			*plot <- fmt.Sprintf("\t%d %d %d %.3f %.3f %.3f\n", x*2, y*2, 0, cur[0], cur[1], cur[2])
+			pipe <- fmt.Sprintf("\t%d %d %d %.3f %.3f %.3f\n", x*2, y*2, 0, cur[0], cur[1], cur[2])
 		}
 	}
-	*plot <- "EOF"
-	*plot <- "pause 0.0001"
+	pipe <- "EOF"
+	pipe <- "pause 0.0001"
 }
 
-func gnuplotHandler(plot Plot, pipe io.WriteCloser) {
+func gnuplotHandler(plot chan string, pipe io.WriteCloser) {
 	var command string
 	ok := true
 
@@ -39,10 +52,10 @@ func gnuplotHandler(plot Plot, pipe io.WriteCloser) {
 	}
 }
 
-func GetGnuplotPipe() (Plot, error) {
+func getGnuplotPipe() (chan string, error) {
 	var cmd *exec.Cmd
 
-	cmd = exec.Command("gnuplot")
+	cmd = exec.Command("gnuplot", "-persist")
 
 	pipe, err := cmd.StdinPipe()
 

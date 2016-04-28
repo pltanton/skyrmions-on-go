@@ -2,35 +2,37 @@ package model
 
 import (
 	"log"
+	"time"
 
 	"github.com/plotnikovanton/golinal"
 )
 
 type SimpleIterator struct {
-	times  int
+	Times  int
 	Energy bool
 	m      *Model
 	delta  float64
-	Plot   *Plot
+	Gp     *Gnuplot
 }
 
 func NewSimpleIterator(m *Model) SimpleIterator {
 	ret := SimpleIterator{}
-	ret.times = -1
+	ret.Times = -1
 	ret.Energy = false
 	ret.m = m
 	ret.delta = 0.01
-	plot, _ := GetGnuplotPipe()
-	ret.Plot = &plot
+	plot := NewGnuplot(m)
+	ret.Gp = &plot
 	return ret
 }
 
 func (iter SimpleIterator) Run() {
-	iter.m.ConfigureGnuplot(iter.Plot)
-	if iter.times != -1 {
-		for i := 0; i < iter.times; i++ {
+	if iter.Times != -1 {
+		start_time := time.Now()
+		for i := 0; i < iter.Times; i++ {
 			iter.Iterate()
 		}
+		log.Printf("Total time: %s", time.Since(start_time))
 	} else {
 		for {
 			iter.Iterate()
@@ -55,8 +57,8 @@ func (iter SimpleIterator) Iterate() {
 
 	m.spins = new_spins
 	// Plot
-	if iter.Plot != nil {
-		m.PlotModel(iter.Plot)
+	if iter.Gp != nil {
+		iter.Gp.PlotModel()
 	}
 	if iter.Energy {
 		log.Println("Energy: ", energy)
