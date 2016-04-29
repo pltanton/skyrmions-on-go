@@ -7,57 +7,68 @@ import (
 	"github.com/plotnikovanton/golinal"
 )
 
+// SimpleIterator iterates model by adding to current models spins state
+// gradient of effective energy with energy loss with fixed delta
 type SimpleIterator struct {
-	Times  int
-	Energy bool
-	m      *Model
-	delta  float64
-	Gp     *Gnuplot
+	Times   int
+	Energy  bool
+	m       *Model
+	Delta   float64
+	Gp      *Gnuplot
+	iterNum int
 }
 
+// NewSimpleIterator produces SimpleIterator by given model
+// with default params:
+// Times = -1
+// Energy = false
+// delta = 0.01
+// And gnuplot instance for plotting
 func NewSimpleIterator(m *Model) SimpleIterator {
 	ret := SimpleIterator{}
 	ret.Times = -1
 	ret.Energy = false
 	ret.m = m
-	ret.delta = 0.01
+	ret.Delta = 0.01
 	plot := NewGnuplot(m)
 	ret.Gp = &plot
 	return ret
 }
 
+// Run runs iterator
 func (iter SimpleIterator) Run() {
 	if iter.Times != -1 {
-		start_time := time.Now()
+		startTime := time.Now()
 		for i := 0; i < iter.Times; i++ {
-			iter.Iterate()
+			iter.iterate()
 		}
-		log.Printf("Total time: %s", time.Since(start_time))
+		log.Printf("Total time: %s", time.Since(startTime))
 	} else {
 		for {
-			iter.Iterate()
+			iter.iterate()
 		}
 	}
 }
 
-func (iter SimpleIterator) Iterate() {
+func (iter *SimpleIterator) iterate() {
+	iter.iterNum++
 	// Update model state by adding effective energy
-	energy, energy_eff := iter.m.Energy()
+	energy, energyEff := iter.m.Energy()
 	m := iter.m
-	dsdt := m.spins.WithColumn(
+	dsdt := m.Spins.WithColumn(
 		func(a, b la.Vector) la.Vector {
-			return a.ScalMul(m.gamma).CrossProd(b).Neg().Sub(a.ScalMul(m.gamma * m.lam).CrossProd(a.CrossProd(b)))
+			return a.ScalMul(m.Gamma).CrossProd(b).Neg().Sub(a.ScalMul(m.Gamma * m.Lam).CrossProd(a.CrossProd(b)))
 		},
-		energy_eff,
+		energyEff,
 	)
-	new_spins := m.spins.WithColumn(
-		func(a, b la.Vector) la.Vector { return a.Add(b.ScalMul(iter.delta)).Unit() },
+	newSpins := m.Spins.WithColumn(
+		func(a, b la.Vector) la.Vector { return a.Add(b.ScalMul(iter.Delta)).Unit() },
 		dsdt,
 	)
 
-	m.spins = new_spins
+	m.Spins = newSpins
 	// Plot
-	if iter.Gp != nil {
+	if iter.Gp != nil && iter.iterNum%15 == 0 {
 		iter.Gp.PlotModel()
 	}
 	if iter.Energy {
