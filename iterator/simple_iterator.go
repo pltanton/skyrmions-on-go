@@ -1,10 +1,11 @@
-package model
+package iterator
 
 import (
 	"log"
 	"time"
 
 	"github.com/plotnikovanton/golinal"
+	"github.com/plotnikovanton/skyrmions_on_go/model"
 )
 
 // SimpleIterator iterates model by adding to current models spins state
@@ -12,9 +13,9 @@ import (
 type SimpleIterator struct {
 	Times   int
 	Energy  bool
-	m       *Model
+	m       *model.Model
 	Delta   float64
-	Gp      *Gnuplot
+	Gp      *model.Gnuplot
 	iterNum int
 }
 
@@ -24,13 +25,13 @@ type SimpleIterator struct {
 // Energy = false
 // delta = 0.01
 // And gnuplot instance for plotting
-func NewSimpleIterator(m *Model) SimpleIterator {
+func NewSimpleIterator(m *model.Model) SimpleIterator {
 	ret := SimpleIterator{}
 	ret.Times = -1
 	ret.Energy = false
 	ret.m = m
 	ret.Delta = 0.01
-	plot := NewGnuplot(m)
+	plot := model.NewGnuplot(m)
 	ret.Gp = &plot
 	return ret
 }

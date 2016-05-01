@@ -19,9 +19,9 @@ func NewGnuplot(m *Model) Gnuplot {
 		panic(fmt.Sprintf("Can't create gnuplot pipe: %v", err))
 	}
 	// Configure gnuplot
-	z := (m.x + m.y) / 2
+	z := (m.x + m.y) / 4
 	pipe <- fmt.Sprintf("set xrange [0:%d]\nset yrange [0:%d]\nset zrange [%d:%d]", m.x*2, m.y*2, -z, z)
-	pipe <- "set view 0,0"
+	pipe <- "set view map"
 	return Gnuplot{m, &pipe}
 }
 
@@ -29,10 +29,15 @@ func NewGnuplot(m *Model) Gnuplot {
 func (gp Gnuplot) PlotModel() {
 	pipe := *gp.pipe
 	m := *gp.m
-	pipe <- "splot \"-\" with vectors palette"
+	pipe <- "splot \"-\" notitle with vectors palette"
 	pipe <- m.SpinsToString()
 	pipe <- "EOF"
 	pipe <- "pause 0.0001"
+}
+
+// Pipe pipes command to gnuplot
+func (gp Gnuplot) Pipe(command string) {
+	*gp.pipe <- command
 }
 
 func gnuplotHandler(plot chan string, pipe io.WriteCloser) {
