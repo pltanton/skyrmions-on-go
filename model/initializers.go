@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/plotnikovanton/golinal"
+	"github.com/plotnikovanton/gomath/la"
 	"gopkg.in/yaml.v2"
 )
 

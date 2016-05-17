@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/plotnikovanton/golinal"
+	"github.com/plotnikovanton/gomath/la"
 )
 
 // Bound is used for describe bound above spins

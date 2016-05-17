@@ -1,8 +1,24 @@
 package model
 
 import (
-	"github.com/plotnikovanton/golinal"
+	"github.com/plotnikovanton/gomath/la"
 )
+
+// EnergySplitted returns energy vlue and two columns of
+// vectors p = -dH/dq and q = dH/dp
+func (m Model) EnergySplitted() (float64, la.Column, la.Column) {
+	energy, energyEff := m.Energy()
+	p := make(la.Column, len(energyEff))
+	q := make(la.Column, len(energyEff))
+	for i := 0; i < len(energyEff); i++ {
+		p[i] = m.Spins[i].CrossProd(energyEff[i]).Unit()
+		q[i] = m.Spins[i].CrossProd(p[i]).Unit()
+
+		p[i] = p[i].ScalMul(p[i].InnerProd(energyEff[i]))
+		q[i] = q[i].ScalMul(q[i].InnerProd(energyEff[i]))
+	}
+	return energy, p, q
+}
 
 // Energy returns pair of enegry with effective energy component
 func (m Model) Energy() (float64, la.Column) {
@@ -58,5 +74,5 @@ func (m Model) atomExchange(idx int) la.Vector {
 // Anisotropy component
 func (m Model) anisotropy(idx int) la.Vector {
 	v := m.Spins[idx]
-	return m.k.ScalMul(2. * m.k.Len()).CrossProd(m.k.DotProd(v))
+	return m.k.Unit().ScalMul(2. * m.k.Len()).ScalMul(m.k.Unit().InnerProd(v))
 }

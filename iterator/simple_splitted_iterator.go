@@ -8,9 +8,9 @@ import (
 	"github.com/plotnikovanton/skyrmions_on_go/model"
 )
 
-// SimpleIterator iterates model by adding to current models spins state
-// gradient of effective energy with energy loss with fixed delta
-type SimpleIterator struct {
+// SimpleSplittedIterator works like SimpleIterator, but usig vectors p and
+// q instead of effective energy vector
+type SimpleSplittedIterator struct {
 	Times   int
 	Energy  bool
 	m       *model.Model
@@ -19,14 +19,14 @@ type SimpleIterator struct {
 	iterNum int
 }
 
-// NewSimpleIterator produces SimpleIterator by given model
+// NewSimpleSplittedIterator produces SimpleSplittedIterator by given model
 // with default params:
 // Times = -1
 // Energy = false
 // delta = 0.01
 // And gnuplot instance for plotting
-func NewSimpleIterator(m *model.Model) SimpleIterator {
-	ret := SimpleIterator{}
+func NewSimpleSplittedIterator(m *model.Model) SimpleSplittedIterator {
+	ret := SimpleSplittedIterator{}
 	ret.Times = -1
 	ret.Energy = false
 	ret.m = m
@@ -37,7 +37,7 @@ func NewSimpleIterator(m *model.Model) SimpleIterator {
 }
 
 // Run runs iterator
-func (iter SimpleIterator) Run() {
+func (iter SimpleSplittedIterator) Run() {
 	if iter.Times != -1 {
 		startTime := time.Now()
 		for i := 0; i < iter.Times; i++ {
@@ -51,21 +51,15 @@ func (iter SimpleIterator) Run() {
 	}
 }
 
-func (iter *SimpleIterator) iterate() {
+func (iter *SimpleSplittedIterator) iterate() {
 	iter.iterNum++
-	// Update model state by adding effective energy
-	energy, energyEff := iter.m.Energy()
 	m := iter.m
-	dsdt := m.Spins.WithColumn(
-		func(a, b la.Vector) la.Vector {
-			return a.ScalMul(m.Gamma).CrossProd(b).Neg().Sub(a.ScalMul(m.Gamma * m.Lam).CrossProd(a.CrossProd(b)))
-		},
-		energyEff,
-	)
-	newSpins := m.Spins.WithColumn(
-		func(a, b la.Vector) la.Vector { return a.Add(b.ScalMul(iter.Delta)).Unit() },
-		dsdt,
-	)
+	energy, p, q := iter.m.EnergySplitted()
+
+	funcAdd := func(a, b la.Vector) la.Vector {
+		return a.Add(b.ScalMul(iter.Delta)).Unit()
+	}
+	newSpins := m.Spins.WithColumn(funcAdd, p).WithColumn(funcAdd, q)
 
 	m.Spins = newSpins
 	// Plot
